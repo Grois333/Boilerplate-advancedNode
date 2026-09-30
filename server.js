@@ -74,6 +74,11 @@ myDB(async client => {
     res.render('profile', { username: req.user.username });
   });
 
+  app.route('/logout').get((req, res) => {
+    req.logout();
+    res.redirect('/');
+  });
+
   passport.serializeUser((user, done) => {
     done(null, user._id);
   });
@@ -83,6 +88,12 @@ myDB(async client => {
       done(null, doc);
     });
   });
+
+  app.use((req, res, next) => {
+    res.status(404)
+      .type('text')
+      .send('Not Found');
+  });
 }).then(() => {
   startServer();
 }).catch(e => {
@@ -91,6 +102,11 @@ myDB(async client => {
       title: e,
       message: 'Unable to connect to database'
     });
+  });
+  app.use((req, res, next) => {
+    res.status(404)
+      .type('text')
+      .send('Not Found');
   });
   startServer();
 });

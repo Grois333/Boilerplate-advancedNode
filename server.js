@@ -59,11 +59,39 @@ myDB(async client => {
     res.render('index', {
       title: 'Connected to Database',
       message: 'Please login',
-      showLogin: true
+      showLogin: true,
+      showRegistration: true
     });
   });
 
   app.route('/login').post(
+    passport.authenticate('local', { failureRedirect: '/' }),
+    (req, res) => {
+      res.redirect('/profile');
+    }
+  );
+
+  app.route('/register').post(
+    (req, res, next) => {
+      myDataBase.findOne({ username: req.body.username }, (err, user) => {
+        if (err) {
+          return next(err);
+        }
+        if (user) {
+          return res.redirect('/');
+        }
+
+        myDataBase.insertOne({
+          username: req.body.username,
+          password: req.body.password
+        }, err => {
+          if (err) {
+            return res.redirect('/');
+          }
+          next();
+        });
+      });
+    },
     passport.authenticate('local', { failureRedirect: '/' }),
     (req, res) => {
       res.redirect('/profile');

@@ -1,5 +1,6 @@
 const passport = require('passport');
 const LocalStrategy = require('passport-local');
+const GitHubStrategy = require('passport-github').Strategy;
 const bcrypt = require('bcrypt');
 const { ObjectID } = require('mongodb');
 
@@ -14,6 +15,34 @@ module.exports = function (app, myDataBase) {
       }
       return done(null, user);
     });
+  }));
+
+  passport.use(new GitHubStrategy({
+    clientID: process.env.GITHUB_CLIENT_ID,
+    clientSecret: process.env.GITHUB_CLIENT_SECRET,
+    callbackURL: 'http://localhost:3000/auth/github/callback'
+  }, (accessToken, refreshToken, profile, done) => {
+    const photo = profile.photos && profile.photos[0]
+      ? profile.photos[0].value
+      : '';
+    const username = profile.username || profile.displayName || profile.id;
+
+    myDataBase.findOneAndUpdate(
+      { githubId: profile.id },
+      {
+        $setOnInsert: {
+          githubId: profile.id,
+          username: username,
+          name: profile.displayName || username,
+          photo: photo
+        }
+      },
+      { upsert: true, returnOriginal: false },
+      (err, result) => {
+        if (err) return done(err);
+        return done(null, result.value);
+      }
+    );
   }));
 
   passport.serializeUser((user, done) => {

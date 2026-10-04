@@ -22,27 +22,36 @@ module.exports = function (app, myDataBase) {
     clientID: process.env.GITHUB_CLIENT_ID,
     clientSecret: process.env.GITHUB_CLIENT_SECRET,
     callbackURL: 'http://localhost:3000/auth/github/callback'
-  }, (accessToken, refreshToken, profile, done) => {
+  }, function (accessToken, refreshToken, profile, cb) {
     console.log(profile);
-    const photo = profile.photos && profile.photos[0]
-      ? profile.photos[0].value
-      : '';
-    const username = profile.username || profile.displayName || profile.id;
 
     myDataBase.findOneAndUpdate(
-      { githubId: profile.id },
+      { id: profile.id },
       {
         $setOnInsert: {
-          githubId: profile.id,
-          username: username,
-          name: profile.displayName || username,
-          photo: photo
+          id: profile.id,
+          username: profile.username,
+          name: profile.displayName || 'John Doe',
+          photo: profile.photos && profile.photos[0]
+            ? profile.photos[0].value || ''
+            : '',
+          email: Array.isArray(profile.emails) && profile.emails[0]
+            ? profile.emails[0].value
+            : 'No public email',
+          created_on: new Date(),
+          provider: profile.provider || ''
+        },
+        $set: {
+          last_login: new Date()
+        },
+        $inc: {
+          login_count: 1
         }
       },
       { upsert: true, returnOriginal: false },
-      (err, result) => {
-        if (err) return done(err);
-        return done(null, result.value);
+      (err, doc) => {
+        if (err) return cb(err);
+        return cb(null, doc.value);
       }
     );
   }));

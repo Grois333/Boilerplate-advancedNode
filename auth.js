@@ -1,3 +1,4 @@
+require('dotenv').config();
 const passport = require('passport');
 const LocalStrategy = require('passport-local');
 const GitHubStrategy = require('passport-github').Strategy;
@@ -22,6 +23,7 @@ module.exports = function (app, myDataBase) {
     clientSecret: process.env.GITHUB_CLIENT_SECRET,
     callbackURL: 'http://localhost:3000/auth/github/callback'
   }, (accessToken, refreshToken, profile, done) => {
+    console.log(profile);
     const photo = profile.photos && profile.photos[0]
       ? profile.photos[0].value
       : '';

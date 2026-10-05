@@ -47,6 +47,12 @@ myDB(async client => {
     console.log('A user has connected');
     ++currentUsers;
     io.emit('user count', currentUsers);
+
+    socket.on('disconnect', () => {
+      console.log('A user has disconnected');
+      --currentUsers;
+      io.emit('user count', currentUsers);
+    });
   });
 }).then(() => {
   startServer();
